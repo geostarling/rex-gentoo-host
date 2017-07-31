@@ -1,0 +1,8 @@
+Name: Rex::Gentoo::Host
+Description: Basic Gentoo host module
+Author: Jiří Špaček spaceji3@fit.cvut.cz
+License: MIT
+Require:
+  Rex::Disk::Layout:
+    git: ../recepejsy/disk-layout-module
+    branch: master
