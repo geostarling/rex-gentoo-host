@@ -1,7 +1,8 @@
-package Rex::Gentoo::Install;
+package Rex::Gentoo::Host;
 
 use Rex -base;
 use Rex::Template::TT;
+use Rex::Gentoo::Utils;
 
 desc 'Setup Gentoo host system';
 
@@ -24,7 +25,7 @@ task 'setup', sub {
 
 task 'setup_portage', sub {
   file "/etc/portage/make.conf",
-    content => template("templates/make.conf.tt");
+    content => template("templates/etc/portage/make.conf.tt");
 
   my @dirs = ("package.use", "package.mask", "package.accept_keywords");
   foreach my $dir (@dirs) {
@@ -42,7 +43,11 @@ task 'setup_portage', sub {
 
 task 'setup_portage_world', sub {
   my $pkgs = param_lookup('packages');
-  foreach my $pkgs (keys %$packages) {
+
+  file "/etc/portage/world",
+    ensure => "present";
+
+  foreach my $pkg (keys %$pkgs) {
     append_if_no_such_line "/etc/portage/world",
       line  => $pkg,
       regexp => qr/^$pkg/;
@@ -63,11 +68,20 @@ task 'setup_packages', sub {
   symlink("/etc/portage/world", "/var/lib/portage/world");
 
   # sync portage tree
-  optional sub { update_package_db; }, 'Do you want to sync the Portage tree?';
+  Rex::Gentoo::Utils::optional(sub { update_package_db; }, 'Do you want to sync the Portage tree?');
 
   # update all installed packages (@world) to their latest versions
-  optional sub { update_system; }, 'Do you want to update @world packages?';
+  Rex::Gentoo::Utils::optional(sub { update_system; }, 'Do you want to update @world packages?');
 
+};
+
+
+task 'setup_services', sub {
+    my $services = param_lookup('services');
+    foreach my $svc (keys %$services) {
+        service $svc, ensure => "enabled";
+        service $svc, ensure => "started";
+    }
 };
 
 task 'setup_timezone', sub {
@@ -81,11 +95,11 @@ task 'setup_locales', sub {
     content => join("\n", @{param_lookup('locales', ['en_US.UTF-8 UTF-8'])}),
     on_change => sub { run 'locale-gen'; };
 
-  _eselect("locale", "system_locale", "en_US.utf8");
+  Rex::Gentoo::Utils::_eselect("locale", "system_locale", "en_US.utf8");
 };
 
 task 'setup_kernel', sub {
-  optional \&Rex::Gentoo::Kernel::setup, "Do you want to (re)compile the kernel?" ;
+  Rex::Gentoo::Utils::optional(\&Rex::Gentoo::Kernel::setup, "Do you want to (re)compile the kernel?");
 };
 
 task 'setup_users', sub {
