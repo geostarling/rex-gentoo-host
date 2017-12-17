@@ -94,14 +94,24 @@ task 'setup_hostname', sub {
 };
 
 task 'setup_hosts', sub {
-  $DB::single = 1;
   my $hostname = param_lookup('hostname', 'localhost');
   my $domainname = param_lookup('domainname');
   my $hosts = param_lookup('hosts_file', []);
+  $DB::single = 1;
+  # TODO get_system_info facts overried variables provided to 
+  # the template function so we have to prevet clashes of variable
+  # (namely hostname variable provided by get_system_info overrides hostname var. provided via this binding, we choose dnshostname name instead)
+  # TODO all of CMDBs variables are availiable to the template function but
+  # they are unusable in TT templates because of their non-conformant names
+  # (Perl does not allow vars. with semicolon in its name)
+  # ideally we should implement something akin to:
+  # template('something.tt', bulk_param_lookup('Rex::Gentoo::Host'))
+  # which would create binding with variables starting with Rex::Gentoo::Host
+  # stripped of its prefix (so it is valid Perl var name)
   file '/etc/hosts',
     content => template("templates/etc/hosts.tt",
-                        hostname => $hostname,
-                        domainname => $domainname,
+                        dnshostname => $hostname,
+                        dnsdomainname => $domainname,
                         hosts => $hosts);
 };
 

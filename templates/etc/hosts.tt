@@ -1,6 +1,6 @@
 
-127.0.0.1     [% IF domainname %] [% hostname %].[% domainname %] [% END %] [% hostname %] localhost
-::1           [% IF domainname %] [% hostname %].[% domainname %] [% END %] [% hostname %] localhost
+127.0.0.1     [% IF dnsdomainname %] [% dnshostname %].[% dnsdomainname %] [% END %] [% dnshostname %] localhost
+::1           [% IF dnsdomainname %] [% dnshostname %].[% dnsdomainname %] [% END %] [% dnshostname %] localhost
 
 [% FOREACH host IN hosts %]
   [%- host.ip %] [% host.fqdn %] 
