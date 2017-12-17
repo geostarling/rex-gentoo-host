@@ -16,6 +16,8 @@ Rex::Bootloader::Syslinux
 task 'setup', sub {
 
   setup_users();
+  setup_hostname();
+  setup_hosts();
   setup_timezone();
   setup_portage();
   setup_locales();
@@ -34,11 +36,11 @@ task 'setup_portage', sub {
     }
   }
   file "/etc/portage/package.use",
-    content => template("templates/package.use.tt");
+    content => template("templates/etc/portage/package.use.tt");
   file "/etc/portage/package.accept_keywords",
-    content => template("templates/package.accept_keywords.tt");
+    content => template("templates/etc/portage/package.accept_keywords.tt");
   file "/etc/portage/package.mask",
-    content => template("templates/package.mask.tt");
+    content => template("templates/etc/portage/package.mask.tt");
 };
 
 task 'setup_portage_world', sub {
@@ -84,6 +86,25 @@ task 'setup_services', sub {
     }
 };
 
+task 'setup_hostname', sub {
+  my $hostname = param_lookup('hostname', 'localhost');
+  file '/etc/conf.d/hostname',
+    content => "hostname=\"$hostname\"",
+    on_change => sub { service 'hostname' => 'restart' };
+};
+
+task 'setup_hosts', sub {
+  $DB::single = 1;
+  my $hostname = param_lookup('hostname', 'localhost');
+  my $domainname = param_lookup('domainname');
+  my $hosts = param_lookup('hosts_file', []);
+  file '/etc/hosts',
+    content => template("templates/etc/hosts.tt",
+                        hostname => $hostname,
+                        domainname => $domainname,
+                        hosts => $hosts);
+};
+
 task 'setup_timezone', sub {
   file '/etc/timezone',
     content => param_lookup('timezone', 'Etc/UTC'),
@@ -105,10 +126,10 @@ task 'setup_kernel', sub {
 task 'setup_users', sub {
   my $users = param_lookup 'users', [];
   foreach $user (@$users) {
-    if ($user->{name} != 'root') {
+    if ($user->{name} ne 'root') {
       account $user->{name},
         ensure         => "present",
-        comment        => 'User Account',
+        comment        => $user->{name},
         groups         => $user->{groups},
         password       => $user->{password},
         crypt_password => $user->{crypt_password};
