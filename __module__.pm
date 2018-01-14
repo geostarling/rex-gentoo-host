@@ -19,6 +19,7 @@ task 'setup', sub {
   setup_hostname();
   setup_hosts();
   setup_timezone();
+  setup_profile();
   setup_portage();
   setup_locales();
   setup_packages();
@@ -69,12 +70,14 @@ task 'setup_packages', sub {
 
   symlink("/etc/portage/world", "/var/lib/portage/world");
 
+};
+
+task 'update_packages', sub {
   # sync portage tree
   Rex::Gentoo::Utils::optional(sub { update_package_db; }, 'Do you want to sync the Portage tree?');
 
   # update all installed packages (@world) to their latest versions
   Rex::Gentoo::Utils::optional(sub { update_system; }, 'Do you want to update @world packages?');
-
 };
 
 
@@ -98,7 +101,7 @@ task 'setup_hosts', sub {
   my $domainname = param_lookup('domainname');
   my $hosts = param_lookup('hosts_file', []);
   $DB::single = 1;
-  # TODO get_system_info facts overried variables provided to 
+  # TODO get_system_info facts overried variables provided to
   # the template function so we have to prevet clashes of variable
   # (namely hostname variable provided by get_system_info overrides hostname var. provided via this binding, we choose dnshostname name instead)
   # TODO all of CMDBs variables are availiable to the template function but
@@ -119,6 +122,10 @@ task 'setup_timezone', sub {
   file '/etc/timezone',
     content => param_lookup('timezone', 'Etc/UTC'),
     on_change => sub { run 'emerge --config sys-libs/timezone-data'; };
+};
+
+task 'setup_profile', sub {
+  Rex::Gentoo::Utils::_eselect("profile", "Rex::Gentoo::Host::portage_profile", "default/linux/amd64/17.0");
 };
 
 task 'setup_locales', sub {
