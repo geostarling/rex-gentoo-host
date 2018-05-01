@@ -6,5 +6,5 @@
   [%- host.ip %] [% host.fqdn %] 
     [%- FOREACH alias IN host.aliases -%]
       [%- alias -%]
-    [%- END -%]
+    [%- END %]
 [% END %]
