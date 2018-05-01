@@ -9,6 +9,7 @@ desc 'Setup Gentoo host system';
 include qw/
 Rex::Gentoo::Kernel
 Rex::Gentoo::Networking
+Rex::Gentoo::Repos
 Rex::Bootloader::Syslinux
 /;
 
@@ -16,11 +17,13 @@ Rex::Bootloader::Syslinux
 task 'setup', sub {
 
   setup_users();
+  Rex::Gentoo::Networking::setup();
   setup_hostname();
   setup_hosts();
   setup_timezone();
   setup_profile();
   setup_portage();
+  Rex::Gentoo::Repos::setup();
   setup_locales();
   setup_packages();
 
@@ -30,7 +33,7 @@ task 'setup_portage', sub {
   file "/etc/portage/make.conf",
     content => template("templates/etc/portage/make.conf.tt");
 
-  my @dirs = ("package.use", "package.mask", "package.accept_keywords");
+  my @dirs = ("package.use", "package.mask", "package.accept_keywords", "package.license");
   foreach my $dir (@dirs) {
     if( is_dir("/etc/portage/$dir") ) {
       file "/etc/portage/$dir", ensure => "absent";
@@ -42,6 +45,8 @@ task 'setup_portage', sub {
     content => template("templates/etc/portage/package.accept_keywords.tt");
   file "/etc/portage/package.mask",
     content => template("templates/etc/portage/package.mask.tt");
+  file "/etc/portage/package.license",
+    content => template("templates/etc/portage/package.license.tt");
 };
 
 task 'setup_portage_world', sub {
